@@ -219,7 +219,8 @@ class Paginator
 	public function rp()
 	{
 		$this->rp = isset($_GET[$this->rp_query_var]) && is_numeric($_GET[$this->rp_query_var]) ?
-			(int) $_GET[$this->rp_query_var] : 10;
+			(int) $_GET[$this->rp_query_var] : $this->rp;
+    if(empty($this->rp)) $this->rp = 10;
 	}
 
   /**
@@ -376,6 +377,9 @@ class Paginator
    */
   public function getHtml()
   {
+
+    //@todo : Add the number or records and pages so user is aware of pagination traversal
+
     if($this->use_li_element) $output = '<ul'; else $output = '<div';
     $output .= !empty($this->html_id) ? ' id="' . $this->html_id . '" ':'';
     $output .= !empty($this->html_classes) ? ' class="' . $this->html_classes . '" ':'';
