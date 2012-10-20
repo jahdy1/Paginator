@@ -164,6 +164,12 @@ class Paginator
   public $around_the_world = false;
 
   /**
+   * Displays a context message for the number of total pages, and what records are being displayed
+   * @var bool
+   */
+  public $display_pages_text = true;
+
+  /**
    * The number of instances of Paginator
    * @var int
    */
@@ -377,25 +383,35 @@ class Paginator
    */
   public function getHtml()
   {
-
-    //@todo : Add the number or records and pages so user is aware of pagination traversal
-
-    if($this->use_li_element) $output = '<ul'; else $output = '<div';
+    $output = '';
+    $output .= '<div';
     $output .= !empty($this->html_id) ? ' id="' . $this->html_id . '" ':'';
     $output .= !empty($this->html_classes) ? ' class="' . $this->html_classes . '" ':'';
     $output .= '>';
 
+    //@todo : Add the number or records and pages so user is aware of pagination traversal
+    // If user set the total_records variable, we can set record count, otherwise, we can only tell them the current
+    // page of num_of_pages
+    $format = NULL;
+    if($this->display_pages_text && !empty($this->total_records)) {
+      $format = 'Displaying [%records_start%] to [%records_end%] of [%records_count%]';
+    } else if($this->display_pages_text){
+      $format = 'Page [%pg%] of [%page_count%]';
+    }
+
+    if($this->use_li_element) $output .= '<ul>';
+
     // Set the first page link
     if($this->first_last_buttons && $this->pg > $this->display_data['low_boundary']){
-        if($this->use_li_element){
-          $output .= '<li ';
-          $output .= !empty($this->html_item_classes) ? ' class="' . $this->html_item_classes . ' first-pg" ' : '';
-          $output .= '>';
-        }
-        $output .= '<a href="'.$this->getHtmlLink($this->display_data['low_boundary']).'"';
+      if($this->use_li_element){
+        $output .= '<li ';
         $output .= !empty($this->html_item_classes) ? ' class="' . $this->html_item_classes . ' first-pg" ' : '';
-        $output .= '>'.$this->first_page_text.'</a>';
-        if($this->use_li_element) $output .= '</li>';
+        $output .= '>';
+      }
+      $output .= '<a href="'.$this->getHtmlLink($this->display_data['low_boundary']).'"';
+      $output .= !empty($this->html_item_classes) ? ' class="' . $this->html_item_classes . ' first-pg" ' : '';
+      $output .= '>'.$this->first_page_text.'</a>';
+      if($this->use_li_element) $output .= '</li>';
     }
 
     // Set the previous link
@@ -456,7 +472,8 @@ class Paginator
       if($this->use_li_element) $output .= '</li>';
     }
 
-    if($this->use_li_element) $output .= '</ul>'; else $output .= '</div>';
+    if($this->use_li_element) $output .= '</ul>';
+    $output .= '</div>';
     return $output;
   }
 }
