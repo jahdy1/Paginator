@@ -127,7 +127,8 @@ class Paginator
   public $next_prev_buttons = true;
 
   /**
-   * Whether or not to display buttons that jump to both the first and last page
+   * Whether or not to display buttons that jump to both the first and last page. NOTE: These links will only appear
+   * if the number of pages exceeds the display limit
    * @var bool
    */
   public $first_last_buttons = true;
@@ -467,7 +468,7 @@ class Paginator
     if($this->use_li_element) $output .= '<ul>';
 
     // Set the first page link
-    if($this->first_last_buttons && $this->pg > $this->display_data['low_boundary']){
+    if($this->first_last_buttons && $this->pg > $this->display_data['low_boundary'] && $this->num_of_pages > $this->display_limit){
       if($this->use_li_element){
         $output .= '<li ';
         $output .= !empty($this->html_item_classes) ? ' class="' . $this->html_item_classes . ' first-pg" ' : '';
@@ -525,7 +526,7 @@ class Paginator
     }
 
     // Set the last page link
-    if($this->first_last_buttons && $this->pg < $this->display_data['high_boundary']){
+    if($this->first_last_buttons && $this->pg < $this->display_data['high_boundary'] && $this->num_of_pages > $this->display_limit){
       if($this->use_li_element){
         $output .= '<li ';
         $output .= !empty($this->html_item_classes) ? ' class="' . $this->html_item_classes . ' last-pg" ' : '';
