@@ -170,6 +170,18 @@ class Paginator
   public $display_pages_text = true;
 
   /**
+   * Text to display with pagination
+   * Available Params:
+   * - records_start (first record on a given page) - NOTE: Only available on instances where total_records is set
+   * - records_end (last record on a given page) - NOTE: Only available on instances where total_records is set
+   * - records_count (total number or records) - NOTE: Only available on instances where total_records is set
+   * - pg
+   * - page_count
+   * @var string
+   */
+  public $pages_text_format = 'Displaying [%records_start%] - [%records_end%] of <strong>[%records_count%]</strong> results';
+
+  /**
    * The number of instances of Paginator
    * @var int
    */
@@ -244,6 +256,14 @@ class Paginator
       'outside_high' => false, // Whether or not the unadjusted end is outside of the high boundary
     );
 
+    // Set the records numbers on current page
+    $this->display_data['first_record_on_page'] = (($this->pg - 1) * $this->rp) + 1;
+    if($this->pg == $this->num_of_pages && $this->total_records){
+      $this->display_data['last_record_on_page'] = $this->total_records;
+    } else {
+      $this->display_data['last_record_on_page'] = $this->pg * $this->rp;
+    }
+
     // Whether to display all
     if(!$this->display_all){
 
@@ -292,7 +312,6 @@ class Paginator
 
     // Sets the page range.  This index is not used, but is useful for debugging
     $this->display_data['page_range'] = range((int)$this->display_data['link_display_start'], (int)$this->display_data['link_display_end']);
-
   }
 
   /**
@@ -306,7 +325,7 @@ class Paginator
     $this->setNextPage();
     $this->setPrevPage();
     $this->getHtmlID(); // Sets the html ID that user set and makes sure it is unique
-	}
+  }
 
   /**
    * Sets the array of query vars that need to be re-added on return
@@ -348,11 +367,48 @@ class Paginator
     }
 	}
 
+  public function getValueByPlaceholder($placeholder){
+    $placeholder = strtolower($placeholder);
+    $holders = array(
+      'records_start' => $this->display_data['first_record_on_page'],
+      'records_end' => $this->display_data['last_record_on_page'],
+      'records_count' => $this->total_records,
+      'page_count' => $this->display_data['high_boundary'],
+      'pg' => $this->pg,
+    );
+    if(isset($holders[$placeholder])) return $holders[$placeholder];
+    return;
+  }
+
+  /**
+   * Checks whether the id being passed in matches the html_id of any other active Paginator element
+   * @param $id
+   * @return bool
+   */
   public static function isUniqueHtmlID($id){
     foreach(static::$instances as $instance){
       if($instance->html_id == $id) return false;
     }
     return true;
+  }
+
+  /**
+   * Reads in a string format and replaces placeholders with object data
+   * @param $string
+   * @return string
+   */
+  public function processFormat($string){
+    $regex = '%(?<=\[\%).*?(?=\%\])%s';
+    preg_match_all($regex, $string, $placeholders, PREG_SET_ORDER);
+    foreach($placeholders as $placeholder){
+      $placeholder = (string)$placeholder[0];
+      if($value = $this->getValueByPlaceholder($placeholder)){
+        $string = str_replace("[%{$placeholder}%]", $value, $string);
+      } else {
+        $string = str_replace("[%{$placeholder}%]", '', $string);
+      }
+    }
+    return $string;
   }
 
   /**
@@ -392,12 +448,21 @@ class Paginator
     //@todo : Add the number or records and pages so user is aware of pagination traversal
     // If user set the total_records variable, we can set record count, otherwise, we can only tell them the current
     // page of num_of_pages
-    $format = NULL;
-    if($this->display_pages_text && !empty($this->total_records)) {
-      $format = 'Displaying [%records_start%] to [%records_end%] of [%records_count%]';
-    } else if($this->display_pages_text){
-      $format = 'Page [%pg%] of [%page_count%]';
+    $format = '';
+    if($this->display_pages_text){
+      $format .= '<div class="paginator-pages-context">';
+      // Checks if pages_text_format is set
+      if(!empty($this->pages_text_format)){
+        $format .= $this->pages_text_format;
+      } else {
+        // If total_records is not set, the default format is used
+        if(empty($this->total_records)) {
+          $format .= 'Page [%pg%] of [%page_count%]';
+        }
+      }
+      $format .= '</div><!--/paginator-pages-context-->';
     }
+    if(!empty($format)) $output .= $this->processFormat($format);
 
     if($this->use_li_element) $output .= '<ul>';
 
